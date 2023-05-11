@@ -10,7 +10,7 @@ thread_local! {
 
 // System functions
 #[post_upgrade]
-fn pre_upgrade() {
+fn post_upgrade() {
     ROUTER.with(|r| *r.borrow_mut() = controller::setup())
 }
 
