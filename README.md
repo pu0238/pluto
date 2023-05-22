@@ -29,9 +29,10 @@ dfx deploy
 ```
 
 ## Coming soon
-- Data validation
+- Request validation
 - Authentication and secure tokens
 - CLI (project generator, files generator)
 - Tests
 - Website + Docs
 - Examples
+- Swagger integration
