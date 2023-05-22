@@ -45,10 +45,10 @@ use std::{fmt, str};
 /// assert_eq!(Method::POST.as_str(), "POST");
 /// ```
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Method(Inner);
+pub(crate) struct Method(Inner);
 
 /// A possible error value when converting `Method` from bytes.
-pub struct InvalidMethod {
+pub(crate) struct InvalidMethod {
     _priv: (),
 }
 
@@ -72,34 +72,34 @@ enum Inner {
 
 impl Method {
     /// GET
-    pub const GET: Method = Method(Get);
+    pub(crate) const GET: Method = Method(Get);
 
     /// POST
-    pub const POST: Method = Method(Post);
+    pub(crate) const POST: Method = Method(Post);
 
     /// PUT
-    pub const PUT: Method = Method(Put);
+    pub(crate) const PUT: Method = Method(Put);
 
     /// DELETE
-    pub const DELETE: Method = Method(Delete);
+    pub(crate) const DELETE: Method = Method(Delete);
 
     /// HEAD
-    pub const HEAD: Method = Method(Head);
+    pub(crate) const HEAD: Method = Method(Head);
 
     /// OPTIONS
-    pub const OPTIONS: Method = Method(Options);
+    pub(crate) const OPTIONS: Method = Method(Options);
 
     /// CONNECT
-    pub const CONNECT: Method = Method(Connect);
+    pub(crate) const CONNECT: Method = Method(Connect);
 
     /// PATCH
-    pub const PATCH: Method = Method(Patch);
+    pub(crate) const PATCH: Method = Method(Patch);
 
     /// TRACE
-    pub const TRACE: Method = Method(Trace);
+    pub(crate) const TRACE: Method = Method(Trace);
 
     /// Converts a slice of bytes to an HTTP method.
-    pub fn from_bytes(src: &[u8]) -> Result<Method, InvalidMethod> {
+    pub(crate) fn from_bytes(src: &[u8]) -> Result<Method, InvalidMethod> {
         match src.len() {
             0 => Err(InvalidMethod::new()),
             3 => match src {
@@ -149,7 +149,7 @@ impl Method {
     ///
     /// See [the spec](https://tools.ietf.org/html/rfc7231#section-4.2.1)
     /// for more words.
-    pub fn is_safe(&self) -> bool {
+    pub(crate) fn is_safe(&self) -> bool {
         match self.0 {
             Get | Head | Options | Trace => true,
             _ => false,
@@ -161,7 +161,7 @@ impl Method {
     ///
     /// See [the spec](https://tools.ietf.org/html/rfc7231#section-4.2.2) for
     /// more words.
-    pub fn is_idempotent(&self) -> bool {
+    pub(crate) fn is_idempotent(&self) -> bool {
         match self.0 {
             Put | Delete => true,
             _ => self.is_safe(),
@@ -169,7 +169,7 @@ impl Method {
     }
 
     #[inline]
-    pub fn as_str(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         match self.0 {
             Options => "OPTIONS",
             Get => "GET",
@@ -316,17 +316,17 @@ mod extension {
 
     #[derive(Clone, PartialEq, Eq, Hash)]
     // Invariant: the first self.1 bytes of self.0 are valid UTF-8.
-    pub struct InlineExtension([u8; InlineExtension::MAX], u8);
+    pub(crate) struct InlineExtension([u8; InlineExtension::MAX], u8);
 
     #[derive(Clone, PartialEq, Eq, Hash)]
     // Invariant: self.0 contains valid UTF-8.
-    pub struct AllocatedExtension(Box<[u8]>);
+    pub(crate) struct AllocatedExtension(Box<[u8]>);
 
     impl InlineExtension {
         // Method::from_bytes() assumes this is at least 7
-        pub const MAX: usize = 15;
+        pub(crate) const MAX: usize = 15;
 
-        pub fn new(src: &[u8]) -> Result<InlineExtension, InvalidMethod> {
+        pub(crate) fn new(src: &[u8]) -> Result<InlineExtension, InvalidMethod> {
             let mut data: [u8; InlineExtension::MAX] = Default::default();
 
             write_checked(src, &mut data)?;
@@ -336,7 +336,7 @@ mod extension {
             Ok(InlineExtension(data, src.len() as u8))
         }
 
-        pub fn as_str(&self) -> &str {
+        pub(crate) fn as_str(&self) -> &str {
             let InlineExtension(ref data, len) = self;
             // Safety: the invariant of InlineExtension ensures that the first
             // len bytes of data contain valid UTF-8.
@@ -345,7 +345,7 @@ mod extension {
     }
 
     impl AllocatedExtension {
-        pub fn new(src: &[u8]) -> Result<AllocatedExtension, InvalidMethod> {
+        pub(crate) fn new(src: &[u8]) -> Result<AllocatedExtension, InvalidMethod> {
             let mut data: Vec<u8> = vec![0; src.len()];
 
             write_checked(src, &mut data)?;
@@ -355,7 +355,7 @@ mod extension {
             Ok(AllocatedExtension(data.into_boxed_slice()))
         }
 
-        pub fn as_str(&self) -> &str {
+        pub(crate) fn as_str(&self) -> &str {
             // Safety: the invariant of AllocatedExtension ensures that self.0
             // contains valid UTF-8.
             unsafe {str::from_utf8_unchecked(&self.0)}

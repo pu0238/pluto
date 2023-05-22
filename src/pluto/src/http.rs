@@ -2,19 +2,19 @@ use candid::{CandidType, Deserialize};
 use matchit::{Match, Params};
 use serde::Serialize;
 use std::{collections::{HashMap}, str::FromStr};
-use crate::{method::{Method}, router::{Router, HandlerContainer}};
+use crate::{method::{Method}, router::{Router, HandlerContainer, Handler}, cors::Cors};
 use serde_json::{json, Value};
 
 #[derive(CandidType, Deserialize, Clone)]
-pub struct HeaderField(pub String, pub String);
+pub(crate) struct HeaderField(pub(crate) String, pub(crate) String);
 
 #[derive(CandidType, Deserialize, Clone)]
-pub struct RawHttpRequest {
-    pub method: String,
-    pub url: String,
-    pub headers: Vec<HeaderField>,
+pub(crate) struct RawHttpRequest {
+    pub(crate) method: String,
+    pub(crate) url: String,
+    pub(crate) headers: Vec<HeaderField>,
     #[serde(with = "serde_bytes")]
-    pub body: Vec<u8>,
+    pub(crate) body: Vec<u8>,
 }
 
 impl From<RawHttpRequest> for HttpRequest {
@@ -31,33 +31,46 @@ impl From<RawHttpRequest> for HttpRequest {
 }
 
 #[derive(CandidType, Deserialize, Clone)]
-pub struct HttpRequest {
-    pub method: String,
-    pub url: String,
-    pub headers: Vec<HeaderField>,
+pub(crate) struct HttpRequest {
+    pub(crate) method: String,
+    pub(crate) url: String,
+    pub(crate) headers: Vec<HeaderField>,
     #[serde(with = "serde_bytes")]
-    pub body: Vec<u8>,
-    pub params: HashMap<String, String>,
-    pub path: String,
+    pub(crate) body: Vec<u8>,
+    pub(crate) params: HashMap<String, String>,
+    pub(crate) path: String,
 }
 
 #[derive(CandidType, Deserialize)]
-pub struct RawHttpResponse {
-    pub status_code: u16,
-    pub headers: HashMap<String, String>,
+pub(crate) struct RawHttpResponse {
+    pub(crate) status_code: u16,
+    pub(crate) headers: HashMap<String, String>,
     #[serde(with = "serde_bytes")]
-    pub body: Vec<u8>,
-    pub upgrade: Option<bool>
+    pub(crate) body: Vec<u8>,
+    pub(crate) upgrade: Option<bool>
 }
 
 impl RawHttpResponse {
     fn set_upgrade(&mut self, upgrade: bool){
         self.upgrade = Some(upgrade);
     }
+
+    fn enrich_header(&mut self){
+        if let None = self.headers.get("Content-Type") {
+            self.headers.insert(
+                String::from("Content-Type"),
+                String::from("application/json")
+            );
+        }
+        self.headers.insert(
+            String::from("X-Powered-By"),
+            String::from("Pluto")
+        );
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub enum HttpBody {
+pub(crate) enum HttpBody {
     Value(Value),
     String(String)
 }
@@ -90,29 +103,37 @@ impl From<Value> for HttpBody {
     }
 }
 
-pub struct HttpResponse {
-    pub status_code: u16,
-    pub headers: HashMap<String, String>,
-    pub body: HttpBody,
+pub(crate) struct HttpResponse {
+    pub(crate) status_code: u16,
+    pub(crate) headers: HashMap<String, String>,
+    pub(crate) body: HttpBody,
+}
+
+impl HttpResponse {
+    pub(crate) fn add_raw_header(&mut self, key: &str, value: String) {
+        self.headers.insert(key.to_string(), value);
+    } 
+
+    pub(crate) fn remove_header(&mut self, key: &str) {
+        self.headers.remove(key);
+    }
 }
 
 impl From<HttpResponse> for RawHttpResponse {
     fn from(res: HttpResponse) -> Self {
-        let mut headers = res.headers;
-        headers.insert(
-            String::from("Content-Type"),
-            String::from("application/json"));
-        RawHttpResponse {
+        let mut res = RawHttpResponse {
             status_code: res.status_code,
-            headers: headers,
+            headers: res.headers,
             body: res.body.into(),
             upgrade: Some(false)
-        }
+        };
+        res.enrich_header();
+        res
     }
 }
 
 #[macro_export]
-macro_rules! http_serve {
+macro_rules! http_serve_router {
     ($arg:expr) => {{
         fn f() {}
         fn type_name_of<T>(_: T) -> &'static str {
@@ -128,28 +149,67 @@ macro_rules! http_serve {
         } else {
             panic!("Function \"http_request\" not found")
         }
-        HttpServe::new($arg, http_request_type)
+        HttpServe::new_with_router($arg, http_request_type)
     }}
 }
 
-pub struct HttpServe {
+#[macro_export]
+macro_rules! http_serve {
+    () => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        let name = type_name_of(f);
+        let name = &name[..name.len() - 3];
+        let http_request_type;
+        if name.contains("http_request::{{closure}}") {
+            http_request_type = "http_request"
+        } else if name.contains("http_request_update::{{closure}}") {
+            http_request_type = "http_request_update"
+        } else {
+            panic!("Function \"http_request\" not found")
+        }
+        HttpServe::new(http_request_type)
+    }}
+}
+
+pub(crate) struct HttpServe {
     router: Router,
-    is_query: bool
+    cors_policy: Option<Cors>,
+    is_query: bool,
 }
 
 impl HttpServe {
-    pub fn new(r: Router, init_name: &str) -> Self {
+    pub(crate) fn new(init_name: &str) -> Self {
+        let created_in_query = match init_name {
+            "http_request_update" => false,
+            &_ => true
+        };
+        Self {
+            router: Router::new(),
+            cors_policy: None,
+            is_query: created_in_query,
+        }
+    }
+
+    pub(crate) fn new_with_router(r: Router, init_name: &str) -> Self {
         let created_in_query = match init_name {
             "http_request_update" => false,
             &_ => true
         };
         Self {
             router: r,
+            cors_policy: None,
             is_query: created_in_query
         }
     }
 
-    pub fn bad_request_error(error: serde_json::Value) -> Result<(), HttpResponse> {
+    pub(crate) fn set_router(&mut self, r: Router) {
+        self.router = r;
+    }
+
+    pub(crate) fn bad_request_error(error: serde_json::Value) -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 400,
             headers: HashMap::new(),
@@ -161,7 +221,7 @@ impl HttpServe {
         })
     }
 
-    pub fn internal_server_error() -> Result<(), HttpResponse> {
+    pub(crate) fn internal_server_error() -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 500,
             headers: HashMap::new(),
@@ -172,7 +232,7 @@ impl HttpServe {
         })
     }
 
-    pub fn not_found_error(message: String) -> Result<(), HttpResponse> {
+    pub(crate) fn not_found_error(message: String) -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 404,
             headers: HashMap::new(),
@@ -203,6 +263,7 @@ impl HttpServe {
     }
 
     async fn build_and_execute_request(
+        self,
         req: RawHttpRequest,
         path: &str,
         lookup: Match<'_, '_, &HandlerContainer>,
@@ -212,21 +273,77 @@ impl HttpServe {
         req.path = String::from(path);
         req.params = Self::params_to_string(lookup.params);
         let handle_res = lookup.value.handler.handle(req).await;
-        let mut res: RawHttpResponse = match handle_res {
-            Ok(res) => res.into(),
-            Err(err_res) => err_res.into(),
-        };
-        res.set_upgrade(upgrade);
-        res
+        let mut res = Self::unwrap_response(handle_res);
+        self.use_plugins(&mut res);
+        let mut raw_res: RawHttpResponse = res.into();
+        raw_res.set_upgrade(upgrade);
+        raw_res
     }
 
-    pub async fn serve (self, req: RawHttpRequest) -> RawHttpResponse{
+    fn unwrap_response(res: Result<HttpResponse, HttpResponse>) -> HttpResponse {
+        match res {
+            Ok(res) => res,
+            Err(err_res) => err_res,
+        }
+    }
+
+    fn use_plugins(self, res: &mut HttpResponse) {
+        self.add_cors_to_res(res);
+    }
+
+    fn add_cors_to_res(self, res: &mut HttpResponse) {
+        if let Some(cors) = self.cors_policy {
+            cors.merge(res)
+        }
+    }
+
+    pub(crate) fn use_cors(&mut self, cors_policy: Cors){
+        self.cors_policy = Some(cors_policy);
+    }
+
+    pub(crate) async fn serve (self, req: RawHttpRequest) -> RawHttpResponse{
         match Method::from_str(req.method.clone().as_ref()) {
             Err(_) => Self::internal_server_error().unwrap_err().into(),
             Ok(method) => {
                 let path = Self::get_path(req.url.as_ref());
-                match self.router.lookup(method, path) {
-                    Err(message) => return Self::not_found_error(message).unwrap_err().into(),
+                ic_cdk::println!("{} {}", method, path);
+                match self.router.clone().lookup(method, path) {
+                    Err(message) => {
+                        // Hanndle OPTIONS request
+                        if req.method == Method::OPTIONS.to_string() && self.router.handle_options {
+                            let router_clone = self.router.clone();
+                            let allow = router_clone.allowed(path);
+
+                            if !allow.is_empty() {
+                                return match self.router.global_options {
+                                    Some(ref handler) => {
+                                        let handle_res = handler.handler.handle(req.into()).await;
+                                        let mut raw_res: RawHttpResponse = Self::unwrap_response(handle_res).into();
+                                        raw_res.set_upgrade(handler.upgrade);
+                                        raw_res
+                                    },
+                                    None => {
+                                        let mut res = HttpResponse {
+                                            status_code: 204,
+                                            headers: HashMap::new(),
+                                            body: "".to_string().into(),
+                                        };
+                                        self.use_plugins(&mut res);
+                                        if let None = res.headers.get("Access-Control-Allow-Methods"){
+                                            res.headers.insert(
+                                                "Access-Control-Allow-Methods".to_string(), 
+                                                allow.join(",")
+                                            );
+                                        }
+
+                                        return res.into()
+                                    }
+                                };
+                            }
+                        }
+
+                        return Self::not_found_error(message).unwrap_err().into()
+                    },
                     Ok(lookup) => {
                         let upgrade = lookup.value.upgrade;
                         if self.is_query && upgrade {
@@ -234,7 +351,8 @@ impl HttpServe {
                             err.set_upgrade(upgrade);
                             return err
                         }
-                        return Self::build_and_execute_request(req.clone(), path, lookup, upgrade).await
+                        let res = self.build_and_execute_request(req.clone(), path, lookup, upgrade).await;
+                        return res
                     }
                 }
             }

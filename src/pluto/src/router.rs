@@ -5,33 +5,36 @@ use matchit::Match;
 
 use crate::{method::Method, http::{HttpRequest, HttpResponse}};
 
-
 #[derive(Clone)]
-pub struct Router {
-    prefix: String,
-    trees: HashMap<Method, matchit::Router<HandlerContainer>>,
+pub(crate) struct HandlerContainer {
+    pub(crate) upgrade: bool,
+    pub(crate) handler: Box<dyn Handler>,
 }
 
 #[derive(Clone)]
-pub struct HandlerContainer {
-    pub upgrade: bool,
-    pub handler: Box<dyn Handler>,
+pub(crate) struct Router {
+    prefix: String,
+    trees: HashMap<Method, matchit::Router<HandlerContainer>>,
+    pub(crate) handle_options: bool,
+    pub(crate) global_options: Option<HandlerContainer>,
 }
 
 impl Router{
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             prefix: String::from(""),
-            trees: HashMap::new()
+            trees: HashMap::new(),
+            handle_options: true,
+            global_options: None,
         }
     }
 
-    pub fn set_global_prefix(&mut self, p: String) -> &mut Self{
+    pub(crate) fn set_global_prefix(&mut self, p: String) -> &mut Self{
         self.prefix = p;
         self
     }
 
-    pub fn handle(
+    pub(crate) fn handle(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -62,7 +65,7 @@ impl Router{
         self
     }
 
-    pub fn lookup<'a>(
+    pub(crate) fn lookup<'a>(
         &'a self,
         method: Method,
         path: &'a str,
@@ -83,7 +86,7 @@ impl Router{
         );
     }
 
-    pub fn get(
+    pub(crate) fn get(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -91,7 +94,7 @@ impl Router{
     ) -> &mut Self{
         self.handle(path, upgrade, Method::GET, handler)
     }
-    pub fn head(
+    pub(crate) fn head(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -99,7 +102,7 @@ impl Router{
     ) -> &mut Self {
         self.handle(path, upgrade, Method::HEAD, handler)
     }
-    pub fn options(
+    pub(crate) fn options(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -107,7 +110,7 @@ impl Router{
     ) -> &mut Self {
         self.handle(path, upgrade, Method::OPTIONS, handler)
     }
-    pub fn post(
+    pub(crate) fn post(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -115,15 +118,16 @@ impl Router{
     ) -> &mut Self {
         self.handle(path, upgrade, Method::POST, handler)
     }
-    pub fn put(
+    pub(crate) fn put(
         &mut self,
         path: &str,
         upgrade: bool,
         handler: impl Handler + 'static
     ) -> &mut Self {
+        ic_cdk::println!("{} {} {} ", "register put", Method::PUT, path);
         self.handle(path, upgrade, Method::PUT, handler)
     }
-    pub fn patch(
+    pub(crate) fn patch(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -131,7 +135,7 @@ impl Router{
     ) -> &mut Self{
         self.handle(path, upgrade, Method::PATCH, handler)
     }
-    pub fn delete(
+    pub(crate) fn delete(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -139,10 +143,57 @@ impl Router{
     ) -> &mut Self {
         self.handle(path, upgrade, Method::DELETE, handler)
     }
+
+    pub fn handle_options(mut self) -> Self {
+        self.handle_options = true;
+        self
+    }
+
+    pub fn global_options(mut self, upgrade: bool, handler: impl Handler + 'static) -> Self {
+        self.global_options = Some(HandlerContainer {
+                handler: Box::new(handler),
+                upgrade: upgrade
+            });
+        self
+    }
+
+    pub fn allowed(&self, path: &str) -> Vec<&str> {
+        let mut allowed = match path {
+            "*" => {
+                let mut allowed = Vec::with_capacity(self.trees.len());
+                for method in self
+                    .trees
+                    .keys()
+                    .filter(|&method| method != Method::OPTIONS)
+                {
+                    allowed.push(method.as_ref());
+                }
+                allowed
+            }
+            _ => self
+                .trees
+                .keys()
+                .filter(|&method| method != Method::OPTIONS)
+                .filter(|&method| {
+                    self.trees
+                        .get(method)
+                        .map(|node| node.at(path).is_ok())
+                        .unwrap_or(false)
+                })
+                .map(AsRef::as_ref)
+                .collect::<Vec<_>>(),
+        };
+
+        if !allowed.is_empty() {
+            allowed.push(Method::OPTIONS.as_ref())
+        }
+
+        allowed
+    }
 }
 
 clone_trait_object!(Handler);
-pub trait Handler: Send + Sync + DynClone {
+pub(crate) trait Handler: Send + Sync + DynClone {
     fn handle(
         &self,
         req: HttpRequest,
