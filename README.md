@@ -33,3 +33,5 @@ dfx deploy
 - Authentication and secure tokens
 - CLI (project generator, files generator)
 - Tests
+- Website + Docs
+- Examples
