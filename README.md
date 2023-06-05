@@ -36,3 +36,5 @@ dfx deploy
 - Website + Docs
 - Examples
 - Swagger integration
+- Response cache
+- Blob response
