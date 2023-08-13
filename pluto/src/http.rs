@@ -45,6 +45,12 @@ pub struct HttpRequest {
     pub(crate) path: String,
 }
 
+impl HttpRequest {
+    pub fn validate_body<T: for<'a> Deserialize<'a>>(&self) -> Result<T, serde_json::Error> {
+        serde_json::from_slice(&self.body)
+    }
+}
+
 #[derive(CandidType, Deserialize)]
 pub struct RawHttpResponse {
     pub(crate) status_code: u16,
