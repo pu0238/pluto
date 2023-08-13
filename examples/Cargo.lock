@@ -217,6 +217,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_server_body_validation"
+version = "0.1.0"
+dependencies = [
+ "ic-cdk",
+ "ic-cdk-macros",
+ "pluto",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+]
+
+[[package]]
 name = "http_server_cors"
 version = "0.1.0"
 dependencies = [
