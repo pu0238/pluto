@@ -1,0 +1,18 @@
+type RawHttpRequest = record {
+    method : text;
+    url : text;
+    headers : vec record { text; text; };
+    body : blob;
+};
+
+type RawHttpResponse = record {
+    status_code : nat16;
+    headers : vec record { text; text; };
+    body : blob;
+    upgrade : opt bool;
+};
+
+service : () -> {
+    http_request : (RawHttpRequest) -> (RawHttpResponse) query;
+    http_request_update : (RawHttpRequest) -> (RawHttpResponse);
+}

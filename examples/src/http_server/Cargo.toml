@@ -1,0 +1,15 @@
+[package]
+name = "http_server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.10.0"
+ic-cdk-macros = "0.7.1"
+serde_json = "1.0.104"
+pluto = { path = "../../../pluto" }
