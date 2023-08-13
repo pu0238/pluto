@@ -3,7 +3,10 @@ use std::{collections::HashMap, future::Future, pin::Pin};
 use dyn_clone::{clone_trait_object, DynClone};
 use matchit::Match;
 
-use crate::{method::Method, http::{HttpRequest, HttpResponse}};
+use crate::{
+    http::{HttpRequest, HttpResponse},
+    method::Method,
+};
 
 #[derive(Clone)]
 pub(crate) struct HandlerContainer {
@@ -12,15 +15,15 @@ pub(crate) struct HandlerContainer {
 }
 
 #[derive(Clone)]
-pub(crate) struct Router {
+pub struct Router {
     prefix: String,
     trees: HashMap<Method, matchit::Router<HandlerContainer>>,
     pub(crate) handle_options: bool,
     pub(crate) global_options: Option<HandlerContainer>,
 }
 
-impl Router{
-    pub(crate) fn new() -> Self {
+impl Router {
+    pub fn new() -> Self {
         Self {
             prefix: String::from(""),
             trees: HashMap::new(),
@@ -29,12 +32,12 @@ impl Router{
         }
     }
 
-    pub(crate) fn set_global_prefix(&mut self, p: String) -> &mut Self{
+    pub fn set_global_prefix(&mut self, p: String) -> &mut Self {
         self.prefix = p;
         self
     }
 
-    pub(crate) fn handle(
+    fn handle(
         &mut self,
         path: &str,
         upgrade: bool,
@@ -49,19 +52,16 @@ impl Router{
             global_path.pop();
         }
 
-        match self.trees
-            .entry(method)
-            .or_default()
-            .insert(
-                global_path,
-                HandlerContainer {
-                    handler: Box::new(handler),
-                    upgrade: upgrade
-                }
-            ) {
-                Err(err) => panic!("\nERROR: {}\n", err),
-                Ok(_) => {}
-            }
+        match self.trees.entry(method).or_default().insert(
+            global_path,
+            HandlerContainer {
+                handler: Box::new(handler),
+                upgrade: upgrade,
+            },
+        ) {
+            Err(err) => panic!("\nERROR: {}\n", err),
+            Ok(_) => {}
+        }
         self
     }
 
@@ -72,74 +72,69 @@ impl Router{
     ) -> Result<Match<&HandlerContainer>, String> {
         if let Some(tree_at_path) = self.trees.get(&method) {
             if let Ok(match_result) = tree_at_path.at(path) {
-                return Ok(match_result)
+                return Ok(match_result);
             }
         }
 
         if path == "" {
-            return Err(
-                format!("Cannot {} {}", method, "/")
-            );
+            return Err(format!("Cannot {} {}", method, "/"));
         }
-        return Err(
-            format!("Cannot {} {}", method, path)
-        );
+        return Err(format!("Cannot {} {}", method, path));
     }
 
-    pub(crate) fn get(
+    pub fn get(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
-    ) -> &mut Self{
+        handler: impl Handler + 'static,
+    ) -> &mut Self {
         self.handle(path, upgrade, Method::GET, handler)
     }
-    pub(crate) fn head(
+    pub fn head(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
+        handler: impl Handler + 'static,
     ) -> &mut Self {
         self.handle(path, upgrade, Method::HEAD, handler)
     }
-    pub(crate) fn options(
+    pub fn options(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
+        handler: impl Handler + 'static,
     ) -> &mut Self {
         self.handle(path, upgrade, Method::OPTIONS, handler)
     }
-    pub(crate) fn post(
+    pub fn post(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
+        handler: impl Handler + 'static,
     ) -> &mut Self {
         self.handle(path, upgrade, Method::POST, handler)
     }
-    pub(crate) fn put(
+    pub fn put(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
+        handler: impl Handler + 'static,
     ) -> &mut Self {
-        ic_cdk::println!("{} {} {} ", "register put", Method::PUT, path);
         self.handle(path, upgrade, Method::PUT, handler)
     }
-    pub(crate) fn patch(
+    pub fn patch(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
-    ) -> &mut Self{
+        handler: impl Handler + 'static,
+    ) -> &mut Self {
         self.handle(path, upgrade, Method::PATCH, handler)
     }
-    pub(crate) fn delete(
+    pub fn delete(
         &mut self,
         path: &str,
         upgrade: bool,
-        handler: impl Handler + 'static
+        handler: impl Handler + 'static,
     ) -> &mut Self {
         self.handle(path, upgrade, Method::DELETE, handler)
     }
@@ -151,9 +146,9 @@ impl Router{
 
     pub fn global_options(mut self, upgrade: bool, handler: impl Handler + 'static) -> Self {
         self.global_options = Some(HandlerContainer {
-                handler: Box::new(handler),
-                upgrade: upgrade
-            });
+            handler: Box::new(handler),
+            upgrade: upgrade,
+        });
         self
     }
 
@@ -193,7 +188,7 @@ impl Router{
 }
 
 clone_trait_object!(Handler);
-pub(crate) trait Handler: Send + Sync + DynClone {
+pub trait Handler: Send + Sync + DynClone {
     fn handle(
         &self,
         req: HttpRequest,

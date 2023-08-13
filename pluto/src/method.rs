@@ -17,13 +17,13 @@
 //! assert_eq!(Method::POST.as_str(), "POST");
 //! ```
 
+use self::extension::{AllocatedExtension, InlineExtension};
 use self::Inner::*;
-use self::extension::{InlineExtension, AllocatedExtension};
 
 use std::convert::AsRef;
+use std::convert::TryFrom;
 use std::error::Error;
 use std::str::FromStr;
-use std::convert::TryFrom;
 use std::{fmt, str};
 
 /// The Request Method (VERB)
@@ -45,10 +45,10 @@ use std::{fmt, str};
 /// assert_eq!(Method::POST.as_str(), "POST");
 /// ```
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub(crate) struct Method(Inner);
+pub struct Method(Inner);
 
 /// A possible error value when converting `Method` from bytes.
-pub(crate) struct InvalidMethod {
+pub struct InvalidMethod {
     _priv: (),
 }
 
@@ -69,37 +69,36 @@ enum Inner {
     ExtensionAllocated(AllocatedExtension),
 }
 
-
 impl Method {
     /// GET
-    pub(crate) const GET: Method = Method(Get);
+    pub const GET: Method = Method(Get);
 
     /// POST
-    pub(crate) const POST: Method = Method(Post);
+    pub const POST: Method = Method(Post);
 
     /// PUT
-    pub(crate) const PUT: Method = Method(Put);
+    pub const PUT: Method = Method(Put);
 
     /// DELETE
-    pub(crate) const DELETE: Method = Method(Delete);
+    pub const DELETE: Method = Method(Delete);
 
     /// HEAD
-    pub(crate) const HEAD: Method = Method(Head);
+    pub const HEAD: Method = Method(Head);
 
     /// OPTIONS
-    pub(crate) const OPTIONS: Method = Method(Options);
+    pub const OPTIONS: Method = Method(Options);
 
     /// CONNECT
-    pub(crate) const CONNECT: Method = Method(Connect);
+    pub const CONNECT: Method = Method(Connect);
 
     /// PATCH
-    pub(crate) const PATCH: Method = Method(Patch);
+    pub const PATCH: Method = Method(Patch);
 
     /// TRACE
-    pub(crate) const TRACE: Method = Method(Trace);
+    pub const TRACE: Method = Method(Trace);
 
     /// Converts a slice of bytes to an HTTP method.
-    pub(crate) fn from_bytes(src: &[u8]) -> Result<Method, InvalidMethod> {
+    pub fn from_bytes(src: &[u8]) -> Result<Method, InvalidMethod> {
         match src.len() {
             0 => Err(InvalidMethod::new()),
             3 => match src {
@@ -340,7 +339,7 @@ mod extension {
             let InlineExtension(ref data, len) = self;
             // Safety: the invariant of InlineExtension ensures that the first
             // len bytes of data contain valid UTF-8.
-            unsafe {str::from_utf8_unchecked(&data[..*len as usize])}
+            unsafe { str::from_utf8_unchecked(&data[..*len as usize]) }
         }
     }
 
@@ -358,7 +357,7 @@ mod extension {
         pub(crate) fn as_str(&self) -> &str {
             // Safety: the invariant of AllocatedExtension ensures that self.0
             // contains valid UTF-8.
-            unsafe {str::from_utf8_unchecked(&self.0)}
+            unsafe { str::from_utf8_unchecked(&self.0) }
         }
     }
 
@@ -382,16 +381,16 @@ mod extension {
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', //   x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', //  1x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', //  2x
-        b'\0', b'\0', b'\0',  b'!', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', //  3x
-        b'\0', b'\0',  b'*',  b'+', b'\0',  b'-',  b'.', b'\0',  b'0',  b'1', //  4x
-         b'2',  b'3',  b'4',  b'5',  b'6',  b'7',  b'8',  b'9', b'\0', b'\0', //  5x
-        b'\0', b'\0', b'\0', b'\0', b'\0',  b'A',  b'B',  b'C',  b'D',  b'E', //  6x
-         b'F',  b'G',  b'H',  b'I',  b'J',  b'K',  b'L',  b'M',  b'N',  b'O', //  7x
-         b'P',  b'Q',  b'R',  b'S',  b'T',  b'U',  b'V',  b'W',  b'X',  b'Y', //  8x
-         b'Z', b'\0', b'\0', b'\0',  b'^',  b'_',  b'`',  b'a',  b'b',  b'c', //  9x
-         b'd',  b'e',  b'f',  b'g',  b'h',  b'i',  b'j',  b'k',  b'l',  b'm', // 10x
-         b'n',  b'o',  b'p',  b'q',  b'r',  b's',  b't',  b'u',  b'v',  b'w', // 11x
-         b'x',  b'y',  b'z', b'\0',  b'|', b'\0',  b'~', b'\0', b'\0', b'\0', // 12x
+        b'\0', b'\0', b'\0', b'!', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', //  3x
+        b'\0', b'\0', b'*', b'+', b'\0', b'-', b'.', b'\0', b'0', b'1', //  4x
+        b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'\0', b'\0', //  5x
+        b'\0', b'\0', b'\0', b'\0', b'\0', b'A', b'B', b'C', b'D', b'E', //  6x
+        b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', //  7x
+        b'P', b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X', b'Y', //  8x
+        b'Z', b'\0', b'\0', b'\0', b'^', b'_', b'`', b'a', b'b', b'c', //  9x
+        b'd', b'e', b'f', b'g', b'h', b'i', b'j', b'k', b'l', b'm', // 10x
+        b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v', b'w', // 11x
+        b'x', b'y', b'z', b'\0', b'|', b'\0', b'~', b'\0', b'\0', b'\0', // 12x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 13x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 14x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 15x
@@ -404,7 +403,7 @@ mod extension {
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 22x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 23x
         b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 24x
-        b'\0', b'\0', b'\0', b'\0', b'\0', b'\0'                              // 25x
+        b'\0', b'\0', b'\0', b'\0', b'\0', b'\0', // 25x
     ];
 
     // write_checked ensures (among other things) that the first src.len() bytes
