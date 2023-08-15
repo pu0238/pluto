@@ -1,8 +1,14 @@
-use http::{RawHttpRequest, RawHttpResponse, HttpServe};
+use ic_cdk_macros::{post_upgrade, query, update};
+use pluto::{
+    cors::Cors,
+    http::{HttpServe, RawHttpRequest, RawHttpResponse},
+    http_serve,
+    method::Method,
+    router::Router,
+};
 use std::cell::RefCell;
-use ic_cdk_macros::{update, query, post_upgrade};
 
-use crate::{http, router::Router, http_serve, controller, cors::Cors, method::Method};
+use crate::controller;
 
 thread_local! {
     static ROUTER: RefCell<Router>  = RefCell::new(controller::setup());
@@ -17,25 +23,19 @@ fn post_upgrade() {
 // Http interface
 #[query]
 async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
-    ic_cdk::println!("{}", req.method);
-    cors_bootstrap(http_serve!(), req).await
+    bootstrap(http_serve!(), req).await
 }
 
 #[update]
 async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
-    cors_bootstrap(http_serve!(), req).await
+    bootstrap(http_serve!(), req).await
 }
 
 async fn bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
     let router = ROUTER.with(|r| r.borrow().clone());
-    app.set_router(router);
-    app.serve(req).await
-}
-
-async fn cors_bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
-    let router = ROUTER.with(|r| r.borrow().clone());
     let cors = Cors::new()
         .allow_origin("*")
+        .allow_methods(vec![Method::POST, Method::PUT])
         .allow_headers(vec!["Content-Type", "Authorization"])
         .max_age(Some(3600));
 

@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "http_server": {
+      "candid": "src/http_server/http_server.did",
+      "package": "http_server",
+      "type": "rust"
+    },
+    "http_server_cors": {
+      "candid": "src/http_server_cors/http_server_cors.did",
+      "package": "http_server_cors",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943"
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
