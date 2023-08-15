@@ -22,7 +22,7 @@ pub(crate) fn setup() -> Router {
             .into(),
         })
     });
-    router.post("/", false, |req: HttpRequest| async move {
+    router.post("/", false, |_req: HttpRequest| async move {
         Ok(HttpResponse {
             status_code: 200,
             headers: HashMap::new(),

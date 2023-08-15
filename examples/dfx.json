@@ -13,6 +13,7 @@
     "http_server_body_validation": {
       "candid": "src/http_server_body_validation/http_server_body_validation.did",
       "package": "http_server_body_validation",
+      "optimize": "cycles",
       "type": "rust"
     }
   },

@@ -1,9 +1,7 @@
 use ic_cdk_macros::{post_upgrade, query, update};
 use pluto::{
-    cors::Cors,
     http::{HttpServe, RawHttpRequest, RawHttpResponse},
     http_serve,
-    method::Method,
     router::Router,
 };
 use std::cell::RefCell;
