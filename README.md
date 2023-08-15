@@ -11,25 +11,17 @@ Pluto is an open-source project that empowers developers to build backend servic
 ## Features
 - Easy-to-use router
 - Cors support
-
+- Validation
 ## Getting Started
 
-To get started with Pluto, follow these steps:
+To get started with Pluto simply add pluto to "dependencies" in your Cargo.toml
 
-1. Clone the repository:
-
-``` bash
-git clone https://github.com/pu0238/pluto.git
-```
-
-2. Edit code and add your own routes
-3. Depoloy:
-``` bash
-dfx deploy
+``` toml
+[dependencies]
+pluto = { git = "https://github.com/pu0238/pluto.git" }
 ```
 
 ## Coming soon
-- Request validation
 - Authentication and secure tokens
 - CLI (project generator, files generator)
 - Tests
