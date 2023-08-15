@@ -1,16 +1,16 @@
 use crate::{
     cors::Cors,
     method::Method,
-    router::{Handler, HandlerContainer, Router},
+    router::{HandlerContainer, Router},
 };
 use candid::{CandidType, Deserialize};
-use matchit::{Match, Params};
+use matchit::{Match, Params as MatchitParams};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(CandidType, Deserialize, Clone)]
-pub(crate) struct HeaderField(pub(crate) String, pub(crate) String);
+pub struct HeaderField(String, String);
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct RawHttpRequest {
@@ -28,21 +28,48 @@ impl From<RawHttpRequest> for HttpRequest {
             url: req.url,
             headers: req.headers,
             body: req.body.clone(),
-            params: HashMap::default(),
-            path: String::default(),
+            params: HashMap::new(),
+            path: String::new(),
         }
     }
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct HttpRequest {
-    pub(crate) method: String,
-    pub(crate) url: String,
-    pub(crate) headers: Vec<HeaderField>,
+    pub method: String,
+    pub url: String,
+    pub headers: Vec<HeaderField>,
     #[serde(with = "serde_bytes")]
-    pub(crate) body: Vec<u8>,
+    pub body: Vec<u8>,
     pub params: HashMap<String, String>,
-    pub(crate) path: String,
+    pub path: String,
+}
+
+impl HttpRequest {
+    pub fn body_into_struct<T: for<'a> Deserialize<'a>>(&self) -> Result<T, HttpResponse> {
+        serde_json::from_slice(&self.body).map_err(|msg| HttpResponse {
+            status_code: 400,
+            headers: HashMap::new(),
+            body: json!({
+                "statusCode": 400,
+                "message": msg.to_string(),
+            })
+            .into(),
+        })
+    }
+
+    pub fn params_into_struct<T: for<'a> Deserialize<'a>>(&self) -> Result<T, HttpResponse> {
+        let json = serde_json::json!(&self.params);
+        serde_json::from_value(json).map_err(|msg| HttpResponse {
+            status_code: 400,
+            headers: HashMap::new(),
+            body: json!({
+                "statusCode": 400,
+                "message": msg.to_string(),
+            })
+            .into(),
+        })
+    }
 }
 
 #[derive(CandidType, Deserialize)]
@@ -252,7 +279,7 @@ impl HttpServe {
         path
     }
 
-    fn params_to_string(params: Params) -> HashMap<String, String> {
+    fn params_to_string(params: MatchitParams) -> HashMap<String, String> {
         let mut param: HashMap<String, String> = HashMap::new();
         for val in params.iter() {
             param.insert(String::from(val.0), String::from(val.1));
@@ -272,7 +299,7 @@ impl HttpServe {
         req.params = Self::params_to_string(lookup.params);
         let handle_res = lookup.value.handler.handle(req).await;
         let mut res = Self::unwrap_response(handle_res);
-        self.use_plugins(&mut res);
+        self.use_res_plugins(&mut res);
         let mut raw_res: RawHttpResponse = res.into();
         raw_res.set_upgrade(upgrade);
         raw_res
@@ -285,7 +312,7 @@ impl HttpServe {
         }
     }
 
-    fn use_plugins(self, res: &mut HttpResponse) {
+    fn use_res_plugins(self, res: &mut HttpResponse) {
         self.add_cors_to_res(res);
     }
 
@@ -326,7 +353,7 @@ impl HttpServe {
                                             headers: HashMap::new(),
                                             body: "".to_string().into(),
                                         };
-                                        self.use_plugins(&mut res);
+                                        self.use_res_plugins(&mut res);
                                         if let None =
                                             res.headers.get("Access-Control-Allow-Methods")
                                         {

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, future::Future, pin::Pin};
 
 use dyn_clone::{clone_trait_object, DynClone};
-use matchit::Match;
+use matchit::{Match, Router as MatchRouter};
 
 use crate::{
     http::{HttpRequest, HttpResponse},
@@ -17,7 +17,7 @@ pub(crate) struct HandlerContainer {
 #[derive(Clone)]
 pub struct Router {
     prefix: String,
-    trees: HashMap<Method, matchit::Router<HandlerContainer>>,
+    trees: HashMap<Method, MatchRouter<HandlerContainer>>,
     pub(crate) handle_options: bool,
     pub(crate) global_options: Option<HandlerContainer>,
 }
