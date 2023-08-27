@@ -23,8 +23,8 @@ pub(crate) fn setup() -> Router {
      *  "a": "123",
      *  "b": [1, 2, 3]
      * }
-     * 
-     * For validation we recommend using the libraryhttps://crates.io/crates/validator
+     *
+     * For validation we recommend using the library https://crates.io/crates/validator
      */
     router.post("/", false, |req: HttpRequest| async move {
         #[derive(Deserialize, Serialize)]
@@ -52,7 +52,7 @@ pub(crate) fn setup() -> Router {
      *
      * Path: "/19/-1"
      *
-     * For validation we recommend using the libraryhttps://crates.io/crates/validator
+     * For validation we recommend using the library https://crates.io/crates/validator
      */
     router.get("/:a/:b/:c", false, |req: HttpRequest| async move {
         #[derive(Deserialize, Serialize, Eq, PartialEq, Debug, Validate)]
