@@ -15,6 +15,12 @@
       "package": "http_server_body_validation",
       "optimize": "cycles",
       "type": "rust"
+    },
+    "http_server_html_template": {
+      "candid": "src/http_server_html_template/http_server_html_template.did",
+      "package": "http_server_html_template",
+      "optimize": "cycles",
+      "type": "rust"
     }
   },
   "defaults": {
