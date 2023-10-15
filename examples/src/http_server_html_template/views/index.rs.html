@@ -1,13 +1,21 @@
+
 @()
+
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Mid</title>
+        <title>Home</title>
     </head>
     <body>
         <div><h1>
             Welcome!
         </h1></div>
         <p>This site was rendered using an HTML template</p>
+        <p>
+            <strong>
+                Computed timestamp (s):
+                @ic_cdk::api::time()
+            </strong>
+        </p>
     </body>
 </html>
