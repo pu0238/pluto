@@ -21,6 +21,12 @@
       "package": "http_server_html_template",
       "optimize": "cycles",
       "type": "rust"
+    },
+    "pluto_homepage": {
+      "candid": "src/pluto_homepage/pluto_homepage.did",
+      "package": "pluto_homepage",
+      "optimize": "cycles",
+      "type": "rust"
     }
   },
   "defaults": {
@@ -31,7 +37,7 @@
   },
   "networks": {
     "local": {
-      "bind": "127.0.0.1:4943"
+      "bind": "127.0.0.1:4946"
     }
   },
   "output_env_file": ".env",

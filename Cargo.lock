@@ -567,6 +567,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pluto_homepage"
+version = "0.1.0"
+dependencies = [
+ "ic-cdk",
+ "ic-cdk-macros",
+ "pluto",
+ "pluto_templating",
+ "serde_json",
+]
+
+[[package]]
 name = "pluto_templating"
 version = "0.1.0"
 dependencies = [
