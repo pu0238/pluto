@@ -12,7 +12,14 @@ pub fn initialize_templating_engine(templates_dir: &str) -> Result<(), ructe::Ru
     };
     match engine.statics() {
         Err(_) => return Ok(()),
-        _ => {}
+        Ok(x) => {
+            let mut handle = x;
+            match handle.add_files("static") {
+                Err(_) => return Ok(()),
+                Ok(x) => {}
+            }
+            
+        }
     };
     Ok(())
 }
