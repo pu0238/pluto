@@ -315,6 +315,7 @@ version = "0.1.0"
 dependencies = [
  "ic-cdk",
  "ic-cdk-macros",
+ "mime",
  "pluto",
  "pluto_templating",
  "serde_json",
@@ -467,6 +468,12 @@ name = "memchr"
 version = "2.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f232d6ef707e1956a43342693d2a31e72989554d58299d7a88738cc95b0d35c"
+
+[[package]]
+name = "mime"
+version = "0.3.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "minimal-lexical"
@@ -684,6 +691,7 @@ dependencies = [
  "bytecount",
  "itertools",
  "md5",
+ "mime",
  "nom",
 ]
 
