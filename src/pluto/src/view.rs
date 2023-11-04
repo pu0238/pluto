@@ -11,7 +11,7 @@ macro_rules! render_view {
     ) => {
         let mut headers = HashMap::new();
         headers.insert(String::from("Content-Type"), String::from("text/html"));
-        let mut buffer: Vec<u8> = vec![];
+        let mut buffer: Vec<u8> = Vec::new();
         $view(&mut buffer$(, $arg)*).unwrap();
         return Ok(pluto::http::HttpResponse {
             status_code: 200,

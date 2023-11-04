@@ -1,3 +1,3 @@
-pub fn main() {
-    let _ = pluto_templating::initialize_templating_engine("views");
+pub fn main() -> Result<(), pluto_templating::RucteError> {
+    pluto_templating::initialize_templating_engine("views")
 }

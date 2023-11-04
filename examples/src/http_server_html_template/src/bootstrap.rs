@@ -1,9 +1,7 @@
 use ic_cdk_macros::{post_upgrade, query, update};
 use pluto::{
-    cors::Cors,
     http::{HttpServe, RawHttpRequest, RawHttpResponse},
     http_serve,
-    method::Method,
     router::Router,
 };
 use std::cell::RefCell;
@@ -33,13 +31,6 @@ async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
 
 async fn bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
     let router = ROUTER.with(|r| r.borrow().clone());
-    let cors = Cors::new()
-        .allow_origin("*")
-        .allow_methods(vec![Method::POST, Method::PUT])
-        .allow_headers(vec!["Content-Type", "Authorization"])
-        .max_age(Some(3600));
-
     app.set_router(router);
-    app.use_cors(cors);
     app.serve(req).await
 }
