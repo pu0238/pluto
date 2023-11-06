@@ -1,15 +1,20 @@
 [package]
-name = "http_server"
+name = "http_server_html_template"
 version = "0.1.0"
 edition = "2021"
+build = "src/build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 crate-type = ["cdylib"]
 
+[build-dependencies]
+pluto_templating = { path = "../../../src/pluto_templating" }
+
 [dependencies]
 ic-cdk = "0.10.0"
 ic-cdk-macros = "0.7.1"
 serde_json = "1.0.104"
 pluto = { path = "../../../src/pluto" }
+mime = "0.3.17"
