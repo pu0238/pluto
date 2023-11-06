@@ -9,8 +9,9 @@ macro_rules! render_view {
         $view:path
         $(, $arg:expr)*
     ) => {
-        let mut headers = HashMap::new();
-        headers.insert(String::from("Content-Type"), String::from("text/html"));
+        let mut headers = HashMap::from([
+            ("Content-Type".to_string(), "text/html".to_string()),
+        ]);
         let mut buffer: Vec<u8> = Vec::new();
         $view(&mut buffer$(, $arg)*).unwrap();
         return Ok(pluto::http::HttpResponse {
