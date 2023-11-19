@@ -9,9 +9,14 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::{collections::HashMap, str::FromStr};
 
+/// HeaderField is the type of the header of the request.
 #[derive(CandidType, Deserialize, Clone)]
 pub struct HeaderField(String, String);
 
+/// RawHttpRequest is the request type that is sent by the client.
+/// It is a raw version of HttpRequest. It is compatible with the Candid type.
+/// It is used in the 'http_request' and 'http_request_update' function of the canister and it is provided by the IC.
+/// It is converted to HttpRequest before it is used in the handler.
 #[derive(CandidType, Deserialize, Clone)]
 pub struct RawHttpRequest {
     pub(crate) method: String,
@@ -35,6 +40,9 @@ impl From<RawHttpRequest> for HttpRequest {
 }
 
 #[derive(CandidType, Deserialize, Clone)]
+/// HttpRequest is the request type that is available in handler.
+/// It is a more user-friendly version of RawHttpRequest
+/// It is used in handler to allow user to process the request.
 pub struct HttpRequest {
     pub method: String,
     pub url: String,
@@ -72,6 +80,8 @@ impl HttpRequest {
     }
 }
 
+/// RawHttpResponse is the response type that is sent back to the client.
+/// It is a raw version of HttpResponse. It is compatible with the Candid type.
 #[derive(CandidType, Deserialize)]
 pub struct RawHttpResponse {
     pub(crate) status_code: u16,
@@ -82,10 +92,12 @@ pub struct RawHttpResponse {
 }
 
 impl RawHttpResponse {
+    /// Set the upgrade flag of the response.
     fn set_upgrade(&mut self, upgrade: bool) {
         self.upgrade = Some(upgrade);
     }
 
+    /// Enrich the header of the response depending on the content the body.
     fn enrich_header(&mut self) {
         if let None = self.headers.get("Content-Type") {
             self.headers.insert(
@@ -98,7 +110,7 @@ impl RawHttpResponse {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub enum HttpBody {
     Value(Value),
     String(String),
@@ -106,7 +118,7 @@ pub enum HttpBody {
 
 impl From<HttpBody> for Vec<u8> {
     fn from(b: HttpBody) -> Self {
-        return match b.clone() {
+        return match b {
             HttpBody::Value(json) => json.to_string().into_bytes().into(),
             HttpBody::String(string) => string.into_bytes().into(),
         };
@@ -125,6 +137,10 @@ impl From<Value> for HttpBody {
     }
 }
 
+/// HttpResponse is the response type that is available in handler.
+/// It is a more user-friendly version of RawHttpResponse
+/// After the handler is executed, it is converted to RawHttpResponse.
+#[derive(Debug, PartialEq, Clone)]
 pub struct HttpResponse {
     pub status_code: u16,
     pub headers: HashMap<String, String>,
@@ -132,10 +148,14 @@ pub struct HttpResponse {
 }
 
 impl HttpResponse {
+    /// Add a header to the response.
+    /// If the header already exists, it will be overwritten.
     pub fn add_raw_header(&mut self, key: &str, value: String) {
         self.headers.insert(key.to_string(), value);
     }
 
+    /// Remove a header from the response.
+    /// If the header does not exist, nothing will happen.
     pub fn remove_header(&mut self, key: &str) {
         self.headers.remove(key);
     }
@@ -154,6 +174,36 @@ impl From<HttpResponse> for RawHttpResponse {
     }
 }
 
+/// This macro is used to create a new instance of HttpServe with given router.
+/// It is used in the 'http_request' and 'http_request_update' function of the canister.
+/// This macro handles routing from not upgradable request to upgradable request.
+///
+/// # Example
+///
+/// ```rust
+/// use ic_cdk::{query, update};
+/// 
+/// use pluto::router::Router;
+/// use pluto::http_serve_router;
+/// use pluto::http::{RawHttpRequest, RawHttpResponse};
+/// use pluto::http::HttpServe;
+/// 
+/// #[query]
+/// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
+///     let router = setup_router();
+///     http_serve_router!(router).serve(req).await
+/// }
+///
+/// #[update]
+/// async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
+///     let router = setup_router();
+///     http_serve_router!(router).serve(req).await
+/// }
+///
+/// fn setup_router() -> Router {
+///    Router::new()
+/// }
+/// ```
 #[macro_export]
 macro_rules! http_serve_router {
     ($arg:expr) => {{
@@ -175,6 +225,36 @@ macro_rules! http_serve_router {
     }};
 }
 
+/// This macro is used to create a new instance of HttpServe.
+/// It is used in the 'http_request' and 'http_request_update' function of the canister.
+/// This macro handles routing from not upgradable request to upgradable request.
+///
+/// # Example
+///
+/// ```rust
+/// use ic_cdk::{query, update};
+/// 
+/// use pluto::router::Router;
+/// use pluto::http_serve;
+/// use pluto::http::{RawHttpRequest, RawHttpResponse};
+/// use pluto::http::HttpServe;
+/// 
+/// #[query]
+/// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
+///     bootstrap(http_serve!(), req).await
+/// }
+///
+/// #[update]
+/// async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
+///     bootstrap(http_serve!(), req).await
+/// }
+///
+/// async fn bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
+///     let router = Router::new();
+///     app.set_router(router);
+///     app.serve(req).await
+/// }
+/// ```
 #[macro_export]
 macro_rules! http_serve {
     () => {{
@@ -196,6 +276,11 @@ macro_rules! http_serve {
     }};
 }
 
+/// HttpServe is the main struct of the Pluto library.
+/// It is used to create a new instance of HttpServe.
+/// It is used in the 'http_request' and 'http_request_update' function of the canister.
+/// This struct handles routing from not upgradable request to upgradable request.
+/// It also handles CORS.
 pub struct HttpServe {
     router: Router,
     cors_policy: Option<Cors>,
@@ -203,6 +288,7 @@ pub struct HttpServe {
 }
 
 impl HttpServe {
+    /// Create a new instance of HttpServe depending on the function name.
     pub fn new(init_name: &str) -> Self {
         let created_in_query = match init_name {
             "http_request_update" => false,
@@ -215,6 +301,7 @@ impl HttpServe {
         }
     }
 
+    /// Create a new instance of HttpServe with given router.
     pub fn new_with_router(r: Router, init_name: &str) -> Self {
         let created_in_query = match init_name {
             "http_request_update" => false,
@@ -227,10 +314,13 @@ impl HttpServe {
         }
     }
 
+    /// Set the router of the HttpServe.
     pub fn set_router(&mut self, r: Router) {
         self.router = r;
     }
 
+    /// Add a handler to the router.
+    /// The handler will be executed if the request do matches any method and path.
     pub fn bad_request_error(error: serde_json::Value) -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 400,
@@ -244,6 +334,7 @@ impl HttpServe {
         });
     }
 
+    /// Predefined server error response.
     pub fn internal_server_error() -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 500,
@@ -256,6 +347,7 @@ impl HttpServe {
         });
     }
 
+    /// Predefined not found error response.
     pub fn not_found_error(message: String) -> Result<(), HttpResponse> {
         return Err(HttpResponse {
             status_code: 404,
@@ -294,7 +386,7 @@ impl HttpServe {
         lookup: Match<'_, '_, &HandlerContainer>,
         upgrade: bool,
     ) -> RawHttpResponse {
-        let mut req: HttpRequest = req.clone().into();
+        let mut req: HttpRequest = req.into();
         req.path = String::from(path);
         req.params = Self::params_to_string(lookup.params);
         let handle_res = lookup.value.handler.handle(req).await;
@@ -322,12 +414,74 @@ impl HttpServe {
         }
     }
 
+    /// Set the CORS policy of the HttpServe.
+    /// ```rust
+    /// use ic_cdk::{query, update};
+    /// 
+    /// use pluto::router::Router;
+    /// use pluto::http_serve;
+    /// use pluto::http::{RawHttpRequest, RawHttpResponse};
+    /// use pluto::http::HttpServe;
+    /// use pluto::method::Method;
+    /// use pluto::cors::Cors;
+    /// 
+    /// #[query]
+    /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
+    ///     bootstrap(http_serve!(), req).await
+    /// }
+    ///
+    /// #[update]
+    /// async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
+    ///     bootstrap(http_serve!(), req).await
+    /// }
+    ///
+    /// async fn bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
+    ///     let router = Router::new();
+    ///     let cors = Cors::new()
+    ///         .allow_origin("*")
+    ///         .allow_methods(vec![Method::POST, Method::PUT])
+    ///         .allow_headers(vec!["Content-Type", "Authorization"])
+    ///         .max_age(Some(3600));
+    /// 
+    ///     app.set_router(router);
+    ///     app.use_cors(cors);
+    ///     app.serve(req).await
+    /// }
+    /// ```
     pub fn use_cors(&mut self, cors_policy: Cors) {
         self.cors_policy = Some(cors_policy);
     }
 
+    /// Serve the request.
+    /// It will return a RawHttpResponse.
+    /// It will return an internal server error if the request is not valid.
+    /// It will return a not found error if the request does not match any method and path.
+    /// ```rust
+    /// use ic_cdk::{query, update};
+    /// 
+    /// use pluto::router::Router;
+    /// use pluto::http_serve;
+    /// use pluto::http::{RawHttpRequest, RawHttpResponse};
+    /// use pluto::http::HttpServe;
+    /// 
+    /// #[query]
+    /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
+    ///     bootstrap(http_serve!(), req).await
+    /// }
+    ///
+    /// #[update]
+    /// async fn http_request_update(req: RawHttpRequest) -> RawHttpResponse {
+    ///     bootstrap(http_serve!(), req).await
+    /// }
+    ///
+    /// async fn bootstrap(mut app: HttpServe, req: RawHttpRequest) -> RawHttpResponse {
+    ///     let router = Router::new();
+    ///     app.set_router(router);
+    ///     app.serve(req).await
+    /// }
+    /// ```
     pub async fn serve(self, req: RawHttpRequest) -> RawHttpResponse {
-        match Method::from_str(req.method.clone().as_ref()) {
+        match Method::from_str(req.method.as_ref()) {
             Err(_) => Self::internal_server_error().unwrap_err().into(),
             Ok(method) => {
                 let path = Self::get_path(req.url.as_ref());
@@ -389,4 +543,3 @@ impl HttpServe {
         }
     }
 }
-

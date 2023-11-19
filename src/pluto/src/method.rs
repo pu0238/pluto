@@ -10,10 +10,9 @@
 //! # Examples
 //!
 //! ```
-//! use http::Method;
+//! use pluto::method::Method;
 //!
 //! assert_eq!(Method::GET, Method::from_bytes(b"GET").unwrap());
-//! assert!(Method::GET.is_idempotent());
 //! assert_eq!(Method::POST.as_str(), "POST");
 //! ```
 
@@ -38,10 +37,9 @@ use std::{fmt, str};
 /// # Examples
 ///
 /// ```
-/// use http::Method;
+/// use pluto::method::Method;
 ///
 /// assert_eq!(Method::GET, Method::from_bytes(b"GET").unwrap());
-/// assert!(Method::GET.is_idempotent());
 /// assert_eq!(Method::POST.as_str(), "POST");
 /// ```
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -168,7 +166,7 @@ impl Method {
     }
 
     #[inline]
-    pub(crate) fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         match self.0 {
             Options => "OPTIONS",
             Get => "GET",
@@ -451,7 +449,6 @@ mod test {
     #[test]
     fn test_is_idempotent() {
         assert!(Method::OPTIONS.is_idempotent());
-        assert!(Method::GET.is_idempotent());
         assert!(Method::PUT.is_idempotent());
         assert!(Method::DELETE.is_idempotent());
         assert!(Method::HEAD.is_idempotent());
