@@ -114,6 +114,7 @@ impl RawHttpResponse {
 pub enum HttpBody {
     Value(Value),
     String(String),
+    Raw(Vec<u8>),
 }
 
 impl From<HttpBody> for Vec<u8> {
@@ -121,6 +122,7 @@ impl From<HttpBody> for Vec<u8> {
         return match b {
             HttpBody::Value(json) => json.to_string().into_bytes().into(),
             HttpBody::String(string) => string.into_bytes().into(),
+            HttpBody::Raw(vec) => vec,
         };
     }
 }
@@ -134,6 +136,12 @@ impl From<String> for HttpBody {
 impl From<Value> for HttpBody {
     fn from(j: Value) -> Self {
         HttpBody::Value(j)
+    }
+}
+
+impl From<Vec<u8>> for HttpBody {
+    fn from(value: Vec<u8>) -> Self {
+        Self::Raw(value)
     }
 }
 
@@ -182,12 +190,12 @@ impl From<HttpResponse> for RawHttpResponse {
 ///
 /// ```rust
 /// use ic_cdk::{query, update};
-/// 
+///
 /// use pluto::router::Router;
 /// use pluto::http_serve_router;
 /// use pluto::http::{RawHttpRequest, RawHttpResponse};
 /// use pluto::http::HttpServe;
-/// 
+///
 /// #[query]
 /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
 ///     let router = setup_router();
@@ -233,12 +241,12 @@ macro_rules! http_serve_router {
 ///
 /// ```rust
 /// use ic_cdk::{query, update};
-/// 
+///
 /// use pluto::router::Router;
 /// use pluto::http_serve;
 /// use pluto::http::{RawHttpRequest, RawHttpResponse};
 /// use pluto::http::HttpServe;
-/// 
+///
 /// #[query]
 /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
 ///     bootstrap(http_serve!(), req).await
@@ -417,14 +425,14 @@ impl HttpServe {
     /// Set the CORS policy of the HttpServe.
     /// ```rust
     /// use ic_cdk::{query, update};
-    /// 
+    ///
     /// use pluto::router::Router;
     /// use pluto::http_serve;
     /// use pluto::http::{RawHttpRequest, RawHttpResponse};
     /// use pluto::http::HttpServe;
     /// use pluto::method::Method;
     /// use pluto::cors::Cors;
-    /// 
+    ///
     /// #[query]
     /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
     ///     bootstrap(http_serve!(), req).await
@@ -442,7 +450,7 @@ impl HttpServe {
     ///         .allow_methods(vec![Method::POST, Method::PUT])
     ///         .allow_headers(vec!["Content-Type", "Authorization"])
     ///         .max_age(Some(3600));
-    /// 
+    ///
     ///     app.set_router(router);
     ///     app.use_cors(cors);
     ///     app.serve(req).await
@@ -458,12 +466,12 @@ impl HttpServe {
     /// It will return a not found error if the request does not match any method and path.
     /// ```rust
     /// use ic_cdk::{query, update};
-    /// 
+    ///
     /// use pluto::router::Router;
     /// use pluto::http_serve;
     /// use pluto::http::{RawHttpRequest, RawHttpResponse};
     /// use pluto::http::HttpServe;
-    /// 
+    ///
     /// #[query]
     /// async fn http_request(req: RawHttpRequest) -> RawHttpResponse {
     ///     bootstrap(http_serve!(), req).await
