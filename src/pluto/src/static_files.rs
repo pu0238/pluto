@@ -2,9 +2,10 @@
 ///
 /// This ensures every file is accessible through HTTP GET requests by adding all of them to the router automatically.
 ///
-/// #Example
+/// # Example
 ///
 /// The best way to use this macro is to include it in the bootstraping step for the router:
+///
 ///
 /// ```rust
 /// #[post_upgrade]
