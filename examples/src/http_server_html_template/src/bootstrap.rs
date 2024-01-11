@@ -1,4 +1,4 @@
-use ic_cdk_macros::{post_upgrade, query, update};
+use ic_cdk::{post_upgrade, query, update};
 use pluto::{
     http::{HttpResponse, HttpServe, RawHttpRequest, RawHttpResponse},
     http_serve,
