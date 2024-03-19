@@ -23,19 +23,18 @@ macro_rules! use_static_files {
         $router:path
     ) => {
         for file in crate::compiled::templates::statics::STATICS.iter() {
-            $router.get(&format!("/static/{}", file.name), false, |_req| async {
-                let bytes = file.content.clone();
-                let mut headers: HashMap<String, String> = HashMap::new();
-                headers.insert("Content-Type".to_string(), file.mime.to_string());
-                return Ok(HttpResponse {
+            $router.get(&format!("/{}", file.name), false, |_req| async {
+                Ok(HttpResponse {
                     status_code: 200,
-                    headers,
+                    headers: HashMap::from([("Content-Type".to_string(), file.mime.to_string())]),
                     body: if file.mime.type_() == "text" || file.mime.subtype() == "json" {
-                        pluto::http::HttpBody::String(String::from_utf8(bytes.to_vec()).unwrap())
+                        pluto::http::HttpBody::String(
+                            String::from_utf8(file.content.to_vec()).unwrap(),
+                        )
                     } else {
-                        bytes.to_owned().into()
+                        file.content.to_owned().into()
                     },
-                });
+                })
             });
         }
     };
