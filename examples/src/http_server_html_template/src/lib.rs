@@ -1,3 +1,3 @@
 mod bootstrap;
-mod controller;
 pub mod compiled;
+mod controller;
