@@ -13,8 +13,8 @@ crate-type = ["cdylib"]
 pluto_templating = { path = "../../../src/pluto_templating" }
 
 [dependencies]
-ic-cdk = "0.11.3"
-candid = "0.9.6"
-serde_json = "1.0.108"
+ic-cdk = { workspace = true }
+candid = { workspace = true }
+serde_json = { workspace = true }
+mime = { workspace = true }
 pluto = { path = "../../../src/pluto" }
-mime = "0.3.17"
