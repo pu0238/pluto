@@ -16,4 +16,4 @@ serde = { workspace = true }
 validator = { workspace = true }
 serde-aux = { workspace = true }
 serde_bytes = { workspace = true }
-pluto = { path = "../../../src/pluto" }
+ic-pluto = { path = "../../../src/pluto" }

@@ -12,4 +12,4 @@ crate-type = ["cdylib"]
 ic-cdk = { workspace = true }
 candid = { workspace = true }
 serde_json = { workspace = true }
-pluto = { path = "../../../src/pluto" }
+ic-pluto = { path = "../../../src/pluto" }
