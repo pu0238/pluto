@@ -15,7 +15,7 @@ Pluto is an open-source project that empowers developers to build backend servic
 ## Getting Started
 
 To get started with Pluto simply run:
-``` toml
+``` 
 cargo add ic-pluto
 ```
 
