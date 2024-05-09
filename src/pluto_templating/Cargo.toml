@@ -1,8 +1,15 @@
 [package]
-name = "pluto_templating"
-version = "0.1.0"
+name = "ic-pluto-templating"
+version = "0.1.1"
 edition = "2021"
-
+license = "MIT"
+authors = ["pu0238 <pu0238@protonmail.com>"]
+description = "HTTP router & SSR tool for the Internet Computer."
+keywords = ["internet-computer", "dfinity", "canister", "ssr", "server-side"]
+readme = "README.md"
+include = ["README.md", "src", "Cargo.toml", "../../LICENSE"]
+homepage = "https://crates.io/crates/ic-pluto-templating"
+documentation = "https://docs.rs/ic-pluto-templating"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

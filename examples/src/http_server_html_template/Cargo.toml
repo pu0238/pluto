@@ -10,11 +10,11 @@ build = "src/build.rs"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-pluto_templating = { path = "../../../src/pluto_templating" }
+ic-pluto-templating = { path = "../../../src/pluto_templating" }
 
 [dependencies]
 ic-cdk = { workspace = true }
 candid = { workspace = true }
 serde_json = { workspace = true }
 mime = { workspace = true }
-pluto = { path = "../../../src/pluto" }
+ic-pluto = { path = "../../../src/pluto" }
