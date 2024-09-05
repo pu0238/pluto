@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use ic_cdk::println;
-use pluto::{
+use ic_pluto::{
     http::{HttpRequest, HttpResponse, HttpServe},
     router::Router,
 };

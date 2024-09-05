@@ -28,7 +28,7 @@ macro_rules! use_static_files {
                     status_code: 200,
                     headers: HashMap::from([("Content-Type".to_string(), file.mime.to_string())]),
                     body: if file.mime.type_() == "text" || file.mime.subtype() == "json" {
-                        pluto::http::HttpBody::String(
+                        ic_pluto::http::HttpBody::String(
                             String::from_utf8(file.content.to_vec()).unwrap(),
                         )
                     } else {

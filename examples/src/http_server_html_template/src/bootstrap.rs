@@ -1,5 +1,5 @@
 use ic_cdk::{post_upgrade, query, update};
-use pluto::{
+use ic_pluto::{
     http::{HttpResponse, HttpServe, RawHttpRequest, RawHttpResponse},
     http_serve,
     router::Router,
@@ -19,7 +19,7 @@ fn post_upgrade() {
         // Initialize the controller actions
         let mut instance = controller::setup();
         // Inject static files from the 'static' folder
-        pluto::use_static_files!(instance);
+        ic_pluto::use_static_files!(instance);
         // Save the changes
         *r.borrow_mut() = instance;
     })

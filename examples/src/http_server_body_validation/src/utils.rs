@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use pluto::http::HttpResponse;
+use ic_pluto::http::HttpResponse;
 use serde_json::json;
 use validator::ValidationErrors;
 

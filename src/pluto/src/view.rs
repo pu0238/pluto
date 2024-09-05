@@ -14,10 +14,10 @@ macro_rules! render_view {
         ]);
         let mut buffer: Vec<u8> = Vec::new();
         $view(&mut buffer$(, $arg)*).unwrap();
-        return Ok(pluto::http::HttpResponse {
+        return Ok(ic_pluto::http::HttpResponse {
             status_code: 200,
             headers,
-            body: pluto::http::HttpBody::String(String::from_utf8(buffer).unwrap()),
+            body: ic_pluto::http::HttpBody::String(String::from_utf8(buffer).unwrap()),
         })
     };
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use pluto::{
+use ic_pluto::{
     http::{HttpRequest, HttpResponse},
     router::Router,
 };
