@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use pluto::{http::HttpRequest, render_view, router::Router};
+use ic_pluto::{http::HttpRequest, render_view, router::Router};
 
 pub(crate) fn setup() -> Router {
     let mut router = Router::new();

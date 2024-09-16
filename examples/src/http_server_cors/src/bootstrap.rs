@@ -1,5 +1,5 @@
 use ic_cdk::{post_upgrade, query, update};
-use pluto::{
+use ic_pluto::{
     cors::Cors,
     http::{HttpServe, RawHttpRequest, RawHttpResponse},
     http_serve,
